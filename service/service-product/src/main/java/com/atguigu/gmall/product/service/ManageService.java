@@ -5,7 +5,9 @@ import com.atguigu.gmall.model.product.*;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 public interface ManageService {
     //获取一级菜单
@@ -38,4 +40,16 @@ public interface ManageService {
     void onSale(Long skuId);
     //商品下架
     void cancelSale(Long skuId);
+    //--------------------item feign-------------------------
+    //商品详情页，获取skuinfo和skuImages
+    SkuInfo getSkuInfo(Long skuId);
+    //商品详情页，获取skuinfo对应的分类信息，这里建立了视图
+    BaseCategoryView getCategoryViewByCategory3Id(Long category3Id);
+    //商品详情页，获取skuinfo对应的价格
+    BigDecimal getSkuPrice(Long skuId);
+    //商品详情页，获取spu销售属性和sku销售属性
+    List<SpuSaleAttr> getSpuSaleAttrListCheckBySku(Long skuId, Long spuId);
+    //商品详情页，向前台提供销售属性和skuid键值json，以便可以进行跳转
+    Map getSkuValueIdsMap(Long spuId);
+
 }
