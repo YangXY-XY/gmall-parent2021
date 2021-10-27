@@ -13,32 +13,51 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Service
 public class ItemServiceImpl implements ItemService {
     @Autowired
     private ProductFeignClient productFeignClient;
+    @Autowired
+    private ThreadPoolExecutor threadPoolExecutor;
 
     @Override
     public Map<String, Object> getBySkuId(Long skuId) {
         Map<String,Object> result=new HashMap<>();
-        SkuInfo skuInfo = productFeignClient.getAttrValueList(skuId);
 
-        List<SpuSaleAttr> spuSaleAttrListCheckBySku =
-                productFeignClient.getSpuSaleAttrListCheckBySku(skuInfo.getId(), skuInfo.getSpuId());
+        CompletableFuture<SkuInfo> skuCompletableFuture = CompletableFuture.supplyAsync(() -> {
+            SkuInfo skuInfo = productFeignClient.getAttrValueList(skuId);
+            result.put("skuInfo", skuInfo);
+            return skuInfo;
+        }, threadPoolExecutor);
 
-        Map skuValueIdsMap = productFeignClient.getSkuValueIdsMap(skuInfo.getSpuId());
+        CompletableFuture<Void> spuSaleAttrCompletableFuture = skuCompletableFuture.thenAcceptAsync(skuInfo -> {
+            List<SpuSaleAttr> spuSaleAttrListCheckBySku =
+                    productFeignClient.getSpuSaleAttrListCheckBySku(skuInfo.getId(), skuInfo.getSpuId());
+            result.put("spuSaleAttrList", spuSaleAttrListCheckBySku);
+        }, threadPoolExecutor);
 
-        BigDecimal skuPrice = productFeignClient.getSkuPrice(skuId);
+        CompletableFuture<Void> skuValueIdsMapCompletableFuture = skuCompletableFuture.thenAcceptAsync(skuInfo -> {
+            Map skuValueIdsMap = productFeignClient.getSkuValueIdsMap(skuInfo.getSpuId());
+            String s = JSON.toJSONString(skuValueIdsMap);
+            result.put("valuesSkuJson", s);
+        }, threadPoolExecutor);
 
-        BaseCategoryView categoryView = productFeignClient.getCategoryView(skuInfo.getCategory3Id());
+        CompletableFuture<Void> skuPriceCompletableFuture = CompletableFuture.runAsync(() -> {
+            BigDecimal skuPrice = productFeignClient.getSkuPrice(skuId);
+            result.put("price", skuPrice);
+        }, threadPoolExecutor);
 
-        result.put("categoryView",categoryView);
-        String s = JSON.toJSONString(skuValueIdsMap);
-        result.put("valuesSkuJson",s);
-        result.put("price",skuPrice);
-        result.put("spuSaleAttrList",spuSaleAttrListCheckBySku);
-        result.put("skuInfo",skuInfo);
+        CompletableFuture<Void> categoryViewCompletableFuture = skuCompletableFuture.thenAcceptAsync(skuInfo -> {
+            BaseCategoryView categoryView = productFeignClient.getCategoryView(skuInfo.getCategory3Id());
+            result.put("categoryView", categoryView);
+        }, threadPoolExecutor);
+
+        CompletableFuture.allOf(skuCompletableFuture,spuSaleAttrCompletableFuture,
+                skuValueIdsMapCompletableFuture,skuPriceCompletableFuture,categoryViewCompletableFuture).join();
+
         return result;
     }
 }

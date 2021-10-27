@@ -1,5 +1,6 @@
 package com.atguigu.gmall.product.client;
 
+import com.atguigu.gmall.common.result.Result;
 import com.atguigu.gmall.model.product.BaseCategoryView;
 import com.atguigu.gmall.model.product.SkuInfo;
 import com.atguigu.gmall.model.product.SpuSaleAttr;
@@ -29,4 +30,8 @@ public interface ProductFeignClient {
 
     @GetMapping("api/product/inner/getSkuValueIdsMap/{spuId}")
     public Map getSkuValueIdsMap(@PathVariable("spuId") Long spuId);
+
+    //首页，获取商品分类的json
+    @GetMapping("api/product/getBaseCategoryList")
+    public Result getBaseCategoryList();
 }

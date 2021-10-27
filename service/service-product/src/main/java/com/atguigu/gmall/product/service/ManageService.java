@@ -1,6 +1,7 @@
 package com.atguigu.gmall.product.service;
 
 
+import com.alibaba.fastjson.JSONObject;
 import com.atguigu.gmall.model.product.*;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -51,5 +52,6 @@ public interface ManageService {
     List<SpuSaleAttr> getSpuSaleAttrListCheckBySku(Long skuId, Long spuId);
     //商品详情页，向前台提供销售属性和skuid键值json，以便可以进行跳转
     Map getSkuValueIdsMap(Long spuId);
-
+    //首页，获取商品的层级信息
+    List<JSONObject> getBaseCategoryList();
 }
